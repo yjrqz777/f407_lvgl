@@ -26,7 +26,8 @@ uint8_t SPI_WriteByte(uint8_t *TxData,uint16_t size)
  */
 static void LCD_Write_Cmd(uint8_t cmd)
 {
-		LCD_DC(0);
+//		LCD_DC(0);
+	LCD_DC(0);
     SPI_WriteByte(&cmd, 1);
 }
 
@@ -38,7 +39,8 @@ static void LCD_Write_Cmd(uint8_t cmd)
  */
 static void LCD_Write_Data(uint8_t dat)
 {
-    LCD_DC(1);
+//    LCD_DC(1);
+	LCD_DC(1);
     SPI_WriteByte(&dat, 1);
 }
 
@@ -46,7 +48,8 @@ static void LCD_Write_Data(uint8_t dat)
 
 void LCD_Write_Data2Bytes(uint16_t dat)
 {
-    LCD_DC(1);
+//    LCD_DC(1);
+	LCD_DC(1);
 		uint8_t dat_temp = dat>>8;
 		uint8_t dat_temp2 = dat;
     SPI_WriteByte(&dat_temp, 1);
@@ -157,6 +160,7 @@ void LCD_color_fill_lvgl(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, lv_
     }
 
 		LCD_Address_Set(x1, y1, x2, y2);
+		LCD_DC(1);
 		LCD_DC(1);
 //		printf("-1--%d-%d-%d---\n",width,height,buf_size);
     for(uint32_t i = 0; i < buf_size; i++)

@@ -208,22 +208,24 @@ void TIM4_IRQHandler(void)
 {
   /* USER CODE BEGIN TIM4_IRQn 0 */
 
-
-	
-//	if(ii<5)
+//	static uint16_t i = 0;
+//	
+//	if(i<2)
 //	{
-//	ii++;
+//	i++;
 //	}
-//	if(ii==5)
+//	if(i==2)
 //	{
 ////	HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_2);
-//		lv_tick_inc(1);
-//	ii=0;
+//			i=0;
+////		lv_tick_inc(2);
 //	}
+	
+	
+//	
+	
+	
 	lv_tick_inc(1);
-	
-	
-//	lv_tick_inc(1);
 	
   /* USER CODE END TIM4_IRQn 0 */
   HAL_TIM_IRQHandler(&htim4);

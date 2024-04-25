@@ -79,22 +79,22 @@ void lv_example_canvas_2(void)
     lv_draw_rect_dsc_t rect_dsc;
     lv_draw_rect_dsc_init(&rect_dsc);
     rect_dsc.radius = 10;
-//    rect_dsc.bg_opa = LV_OPA_COVER;
-//    rect_dsc.bg_grad.dir = LV_GRAD_DIR_HOR;
-//    rect_dsc.bg_grad.stops[0].color = lv_palette_main(LV_PALETTE_RED);
-//    rect_dsc.bg_grad.stops[1].color = lv_palette_main(LV_PALETTE_BLUE);
-//    rect_dsc.border_width = 2;
-//    rect_dsc.border_opa = LV_OPA_90;
-//    rect_dsc.border_color = lv_color_white();
-//    rect_dsc.shadow_width = 5;
-//    rect_dsc.shadow_ofs_x = 5;
-//    rect_dsc.shadow_ofs_y = 5;
+    rect_dsc.bg_opa = LV_OPA_COVER;
+    rect_dsc.bg_grad.dir = LV_GRAD_DIR_HOR;
+    rect_dsc.bg_grad.stops[0].color = lv_palette_main(LV_PALETTE_RED);
+    rect_dsc.bg_grad.stops[1].color = lv_palette_main(LV_PALETTE_BLUE);
+    rect_dsc.border_width = 2;
+    rect_dsc.border_opa = LV_OPA_90;
+    rect_dsc.border_color = lv_color_white();
+    rect_dsc.shadow_width = 5;
+    rect_dsc.shadow_ofs_x = 5;
+    rect_dsc.shadow_ofs_y = 5;
 
     lv_draw_label_dsc_t label_dsc;
     lv_draw_label_dsc_init(&label_dsc);
     label_dsc.color = lv_palette_main(LV_PALETTE_ORANGE);
 
-    static lv_color_t cbuf[LV_CANVAS_BUF_SIZE_TRUE_COLOR(CANVAS_WIDTH, CANVAS_HEIGHT)];
+    lv_color_t cbuf[LV_CANVAS_BUF_SIZE_TRUE_COLOR(CANVAS_WIDTH, CANVAS_HEIGHT)];
 
     lv_obj_t * canvas = lv_canvas_create(lv_scr_act());
     lv_canvas_set_buffer(canvas, cbuf, CANVAS_WIDTH, CANVAS_HEIGHT, LV_IMG_CF_TRUE_COLOR);
@@ -107,16 +107,16 @@ void lv_example_canvas_2(void)
 
     /*Test the rotation. It requires another buffer where the original image is stored.
      *So copy the current image to buffer and rotate it to the canvas*/
-//    static lv_color_t cbuf_tmp[CANVAS_WIDTH * CANVAS_HEIGHT];
-//    memcpy(cbuf_tmp, cbuf, sizeof(cbuf_tmp));
-//    lv_img_dsc_t img;
-//    img.data = (void *)cbuf_tmp;
-//    img.header.cf = LV_IMG_CF_TRUE_COLOR;
-//    img.header.w = CANVAS_WIDTH;
-//    img.header.h = CANVAS_HEIGHT;
+    lv_color_t cbuf_tmp[CANVAS_WIDTH * CANVAS_HEIGHT];
+    memcpy(cbuf_tmp, cbuf, sizeof(cbuf_tmp));
+    lv_img_dsc_t img;
+    img.data = (void *)cbuf_tmp;
+    img.header.cf = LV_IMG_CF_TRUE_COLOR;
+    img.header.w = CANVAS_WIDTH;
+    img.header.h = CANVAS_HEIGHT;
 
-//    lv_canvas_fill_bg(canvas, lv_palette_lighten(LV_PALETTE_GREY, 3), LV_OPA_COVER);
-//    lv_canvas_transform(canvas, &img, 120, LV_IMG_ZOOM_NONE, 0, 0, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, true);
+    lv_canvas_fill_bg(canvas, lv_palette_lighten(LV_PALETTE_GREY, 3), LV_OPA_COVER);
+    lv_canvas_transform(canvas, &img, 120, LV_IMG_ZOOM_NONE, 0, 0, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, true);
 
 }
 
@@ -375,16 +375,16 @@ HAL_Delay(500);
 //    lv_obj_t * obj = lv_obj_create(lv_scr_act());
 //    lv_obj_add_style(obj, &style, 0);
 //    lv_obj_center(obj);
-
+//lv_timer_handler();
 
     LV_IMG_DECLARE(emoji_F617);
     lv_obj_t * img = lv_img_create(lv_scr_act());
     lv_img_set_src(img, &emoji_F617);
-    lv_obj_set_pos(img, 100, 100);//…Ë÷√Õº∆¨Œª÷√
+    lv_obj_set_pos(img, 50, 50);//…Ë÷√Õº∆¨Œª÷√
     lv_img_set_angle(img, 0);//…Ë÷√Õº∆¨–˝◊™Ω«
-    lv_img_set_zoom(img,500);//…Ë÷√Õº∆¨Àı∑≈
+    lv_img_set_zoom(img,100);//…Ë÷√Õº∆¨Àı∑≈
 
-//anim_show_2();
+anim_show_2();
 //	lv_example_flex_5();
 	
 //	st7789v_init();
@@ -395,9 +395,14 @@ HAL_Delay(500);
   {
 //		printf("1111\n");
 //		printf("%d\n",ii);
-		
+//		lv_tick_inc(1);
+
+//		lv_tick_inc(1);
+
 		lv_timer_handler();
+
 		HAL_Delay(5);
+		
 //	HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_2);
 		
 		
@@ -426,12 +431,11 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 8;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLM = 4;
   RCC_OscInitStruct.PLL.PLLN = 168;
   RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
   RCC_OscInitStruct.PLL.PLLQ = 4;
