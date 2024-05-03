@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "dma.h"
+#include "i2c.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -31,6 +32,8 @@
 #include "st7789v.h"
 #include "lvgl.h"
 #include "lv_port_disp.h"
+#include "lv_port_indev.h"
+#include "ft6336.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -118,6 +121,7 @@ void lv_example_canvas_2(void)
     lv_canvas_fill_bg(canvas, lv_palette_lighten(LV_PALETTE_GREY, 3), LV_OPA_COVER);
     lv_canvas_transform(canvas, &img, 120, LV_IMG_ZOOM_NONE, 0, 0, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, true);
 
+
 }
 
 
@@ -157,11 +161,11 @@ void anim_show_2()
    lv_anim_t a;                                       //创建动画样式
    lv_anim_init(&a);                                  //初始化动画
    lv_anim_set_var(&a,obj);                           //给动画设置一个变量
-   lv_anim_set_values(&a,10,50);                      //设置一个动画值
-   lv_anim_set_time(&a,1000);                         //设置动画时间
-   lv_anim_set_playback_delay(&a,100);                //回放延时 使动画回放时，正向方向准备好了
-   lv_anim_set_playback_time(&a,1000);                 //回放时间
-   lv_anim_set_repeat_delay(&a,500);                  //重复延时
+   lv_anim_set_values(&a,5,70);                      //设置一个动画值
+   lv_anim_set_time(&a,5000);                         //设置动画时间
+   lv_anim_set_playback_delay(&a,300);                //回放延时 使动画回放时，正向方向准备好了
+   lv_anim_set_playback_time(&a,5000);                 //回放时间
+   lv_anim_set_repeat_delay(&a,5);                  //重复延时
    lv_anim_set_repeat_count(&a,LV_ANIM_REPEAT_INFINITE); //重复计数次数
    lv_anim_set_path_cb(&a,lv_anim_path_ease_in_out);  //设置动画播放路径
 
@@ -292,6 +296,69 @@ void lv_example_style_12(void)
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+//static int do_i2cdetect_cmd()
+//{
+//    uint8_t address;
+//    printf("     0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f\r\n");
+//    for (int i = 0; i < 128; i += 16) {
+//        printf("%02x: ", i);
+//        for (int j = 0; j < 16; j++) {
+//            fflush(stdout);
+//            address = i + j;
+//						uint8_t ret =HAL_I2C_IsDeviceReady(&hi2c2, (address << 1) | 1, 2, 500);
+//            if (ret == HAL_OK) {
+//                printf("%02x ", address);
+//            } else if (ret == HAL_TIMEOUT) {
+//                printf("UU ");
+//            } else {
+//                printf("-- ");
+//            }
+//        }
+//        printf("\r\n");
+//    }
+////		uint8_t data[8]={0};
+////		HAL_I2C_Mem_Read(&hi2c2,(0x38 << 1) | 1,0xA5,1,data, 1,1000);
+////		for(int i = 0;i<1;i++)
+////		printf("-%02X-\r\n",data[i]);
+//		
+//}
+
+
+
+static void slider_event_cb(lv_event_t * e);
+static lv_obj_t * slider_label;
+
+/**
+ * A default slider with a label displaying the current value
+ */
+void lv_example_slider_1(void)
+{
+    /*Create a slider in the center of the display*/
+    lv_obj_t * slider = lv_slider_create(lv_scr_act());
+    lv_obj_center(slider);
+    lv_obj_add_event_cb(slider, slider_event_cb, LV_EVENT_VALUE_CHANGED, NULL);
+
+    /*Create a label below the slider*/
+    slider_label = lv_label_create(lv_scr_act());
+    lv_label_set_text(slider_label, "0%");
+
+    lv_obj_align_to(slider_label, slider, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
+}
+
+static void slider_event_cb(lv_event_t * e)
+{
+    lv_obj_t * slider = lv_event_get_target(e);
+    char buf[8];
+    lv_snprintf(buf, sizeof(buf), "%d%%", (int)lv_slider_get_value(slider));
+    lv_label_set_text(slider_label, buf);
+    lv_obj_align_to(slider_label, slider, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
+}
+
+
+
+
+
+
 
 /* USER CODE END 0 */
 
@@ -328,6 +395,7 @@ int main(void)
   MX_SPI1_Init();
   MX_USART6_UART_Init();
   MX_TIM4_Init();
+  MX_I2C2_Init();
   /* USER CODE BEGIN 2 */
 	HAL_TIM_Base_Start_IT(&htim4);
 
@@ -335,73 +403,64 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+//	do_i2cdetect_cmd();
+	lv_init();
+
+	lv_port_disp_init();
 	
-//	
-lv_init();
-
-lv_port_disp_init();
-
-HAL_Delay(500);
+	lv_port_indev_init();
+	HAL_Delay(500);
 //lv_example_canvas_2();
 
-//lv_obj_t *obj = lv_checkbox_create(lv_scr_act());
-////lv_obj_set_size(obj,40,10);
-//lv_obj_align(obj,LV_ALIGN_CENTER,0, 0);
-////lv_timer_handler();
-////HAL_Delay(5000);
-//lv_obj_t *obj2 = lv_checkbox_create(lv_scr_act());
-//lv_obj_align(obj2,LV_ALIGN_CENTER,40,60);
-
-
-//    static lv_style_t style;
-//    lv_style_init(&style);
-//    lv_style_set_radius(&style, 5);
-
-//    /*Make a gradient*/
-//    lv_style_set_bg_opa(&style, LV_OPA_COVER);
-//    lv_grad_dsc_t grad;
-//    grad.dir = LV_GRAD_DIR_VER;
-//    grad.stops_count = 2;
-//    grad.stops[0].color = lv_palette_lighten(LV_PALETTE_GREY, 1);
-//    grad.stops[1].color = lv_palette_main(LV_PALETTE_BLUE);
-
-//    /*Shift the gradient to the bottom*/
-//    grad.stops[0].frac  = 128;
-//    grad.stops[1].frac  = 192;
-
-//    lv_style_set_bg_grad(&style, &grad);
-
-//    /*Create an object with the new style*/
-//    lv_obj_t * obj = lv_obj_create(lv_scr_act());
-//    lv_obj_add_style(obj, &style, 0);
-//    lv_obj_center(obj);
-//lv_timer_handler();
 
     LV_IMG_DECLARE(emoji_F617);
     lv_obj_t * img = lv_img_create(lv_scr_act());
     lv_img_set_src(img, &emoji_F617);
-    lv_obj_set_pos(img, 50, 50);//设置图片位置
-    lv_img_set_angle(img, 0);//设置图片旋转角
-    lv_img_set_zoom(img,100);//设置图片缩放
+    lv_obj_set_pos(img, 35, 35);//设置图片位置
+    lv_img_set_angle(img, 30);//设置图片旋转角
+    lv_img_set_zoom(img,200);//设置图片缩放
 
-anim_show_2();
+
+
+//		anim_show_2();
+//		lv_example_get_started_3();
+		
+		
+//		static lv_point_t line_points[] = { {5, 5}, {70, 70}, {120, 10}};
+
+///* 创建一个 line 组件(对象)，他的父对象是活动屏幕对象 */
+//		lv_obj_t * line = lv_line_create(lv_scr_act());
+
+//		lv_line_set_points(line, line_points, 3);     	// 设置点数组。line将连接这些点，按顺序画出直线
+
+		
+//lv_example_canvas_2();
 //	lv_example_flex_5();
-	
-//	st7789v_init();
-	
-//	LCD_color_fill_lvgl(2, 20, 30, 40, 0xf800);
-//	LCD_color_fill_lvgl(30, 40, 70, 80, 0xf800);
+
+		
+//		lv_timer_handler();
+		lv_example_slider_1();
+		anim_show_2();
+//	uint8_t data2= 0x05;
+//	uint8_t data23[2];
+
+//	uint16_t DevAddress = 0x38;
+//	uint8_t ret = 0;
+//	do_i2cdetect_cmd()
+//	HAL_I2C_Mem_Write(&hi2c2,(0x38 << 1) | 0,0x87,1,&data2, 1,1000);
+//	HAL_I2C_Mem_Read(&hi2c2,(0x38 << 1) | 1,0x87,1,data23, 1,1000);
+//	printf("-%02X-\r\n",data23[0]);
+//	HAL_Delay	(1000);
+//lv_timer_handler();
   while (1)
   {
-//		printf("1111\n");
-//		printf("%d\n",ii);
-//		lv_tick_inc(1);
 
+		
 //		lv_tick_inc(1);
-
+//		ft6336_read_xy();
 		lv_timer_handler();
 
-		HAL_Delay(5);
+		HAL_Delay(10);
 		
 //	HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_2);
 		

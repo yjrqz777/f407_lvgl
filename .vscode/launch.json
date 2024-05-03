@@ -8,8 +8,8 @@
       "args": [],
       "stopAtEntry": false,
       "externalConsole": true,
-      "cwd": "e:/Documents/stm32f103c6/f407_lvgl/Core/Src",
-      "program": "e:/Documents/stm32f103c6/f407_lvgl/Core/Src/build/Debug/outDebug",
+      "cwd": "e:/Documents/stm32f103c6/f407_lvgl/My_Lib/ft6336",
+      "program": "e:/Documents/stm32f103c6/f407_lvgl/My_Lib/ft6336/build/Debug/outDebug",
       "MIMode": "gdb",
       "miDebuggerPath": "gdb",
       "setupCommands": [
