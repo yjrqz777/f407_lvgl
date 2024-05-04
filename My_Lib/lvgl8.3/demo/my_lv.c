@@ -4,6 +4,7 @@
 #include "lv_port_indev.h"
 #include "tim.h"
 #include "gpio.h"
+#include "stdio.h"
 void lvgl_tick(void const *argument)
 {
     /* USER CODE BEGIN lvgl_tick */
@@ -148,6 +149,7 @@ static void btn_event_cb_open(lv_event_t * e)
         static uint8_t cnt = 0;
         cnt++;
         HAL_GPIO_WritePin(GPIOB,GPIO_PIN_2,GPIO_PIN_SET);
+        printf("open\r\n");
         /*Get the first child of the button which is the label and change its text*/
         lv_obj_t * label = lv_obj_get_child(btn, 0);
         lv_label_set_text_fmt(label, "open: %d", cnt);
@@ -161,6 +163,7 @@ static void btn_event_cb_close(lv_event_t * e)
         static uint8_t cnt = 0;
         cnt++;
         HAL_GPIO_WritePin(GPIOB,GPIO_PIN_2,GPIO_PIN_RESET);
+        printf("close\r\n");
         /*Get the first child of the button which is the label and change its text*/
         lv_obj_t * label = lv_obj_get_child(btn, 0);
         lv_label_set_text_fmt(label, "close: %d", cnt);
@@ -191,6 +194,28 @@ void lv_example_get_started_1(void)
     lv_obj_center(label2);
 }
 
+
+
+static void btn_event_colorwheel(lv_event_t * e)
+{
+    // lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t * wheel = lv_event_get_target(e);
+    lv_color_t color = lv_colorwheel_get_rgb(wheel);
+    printf("color: %X\r\n", color);
+
+}
+
+void lv_example_colorwheel_1(void)
+{
+    lv_obj_t * cw;
+
+    cw = lv_colorwheel_create(lv_scr_act(), true);
+    lv_obj_set_pos(cw, 200, 120); 
+    lv_obj_set_size(cw, 100, 100);
+    lv_obj_add_event_cb(cw, btn_event_colorwheel, LV_EVENT_ALL, NULL);
+    // lv_obj_center(cw);
+}
+
 void test()
 {
     LV_IMG_DECLARE(emoji_F617);
@@ -203,6 +228,7 @@ void test()
     lv_example_slider_1();
     anim_show_2();
     lv_example_get_started_1();
+    lv_example_colorwheel_1();
     // lv_obj_t *parent = lv_obj_create(lv_scr_act());
     // lv_obj_set_size(parent, 50, 50);
     // lv_obj_set_style_bg_color(parent, lv_palette_main(LV_PALETTE_BLUE), 0);

@@ -83,6 +83,13 @@
     "string_view": "c",
     "lv_port_indev.h": "c",
     "lv_port_disp.h": "c",
-    "lvgl.h": "c"
+    "lvgl.h": "c",
+    "optional": "c",
+    "istream": "c",
+    "ostream": "c",
+    "system_error": "c",
+    "tuple": "c",
+    "type_traits": "c",
+    "utility": "c"
   }
 }

@@ -81,7 +81,7 @@ void ft6336_read_xy(uint16_t *x, uint16_t *y)
     //		HAL_I2C_Mem_Read(&hi2c2, (FT6636ADDR << 1) | 1, 0x03, 1, data, 4,1000);
     *x = (data[2] & 0x0f) << 8 | data[3];
     *y = 280 - ((data[0] & 0x0f) << 8 | data[1])-40;
-    printf("x: %d, y: %d\r\n", *x, *y);
+    // printf("x: %d, y: %d\r\n", *x, *y);
 
     //    printf("\r\n");
     //		return data;
