@@ -156,8 +156,8 @@ void StartDefaultTask(void const *argument)
   {
     //		printf("111\r\n");
 
-    HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_2);
-    osDelay(500);
+    // HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_2);
+    osDelay(200);
   }
   /* USER CODE END StartDefaultTask */
 }

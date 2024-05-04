@@ -3,6 +3,7 @@
 #include "lv_port_disp.h"
 #include "lv_port_indev.h"
 #include "tim.h"
+#include "gpio.h"
 void lvgl_tick(void const *argument)
 {
     /* USER CODE BEGIN lvgl_tick */
@@ -125,7 +126,7 @@ void anim_show_2()
     lv_anim_init(&a);                                      // 初始化动画
     lv_anim_set_var(&a, obj);                              // 给动画设置一个变量
     lv_anim_set_values(&a, 5, 70);                         // 设置一个动画值
-    lv_anim_set_time(&a, 3000);                            // 设置动画时间
+    lv_anim_set_time(&a, 5000);                            // 设置动画时间
     lv_anim_set_playback_delay(&a, 300);                   // 回放延时 使动画回放时，正向方向准备好了
     lv_anim_set_playback_time(&a, 3000);                   // 回放时间
     lv_anim_set_repeat_delay(&a, 5);                       // 重复延时
@@ -139,6 +140,57 @@ void anim_show_2()
     lv_anim_start(&a);                     // 开始动画
 }
 
+static void btn_event_cb_open(lv_event_t * e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t * btn = lv_event_get_target(e);
+    if(code == LV_EVENT_CLICKED) {
+        static uint8_t cnt = 0;
+        cnt++;
+        HAL_GPIO_WritePin(GPIOB,GPIO_PIN_2,GPIO_PIN_SET);
+        /*Get the first child of the button which is the label and change its text*/
+        lv_obj_t * label = lv_obj_get_child(btn, 0);
+        lv_label_set_text_fmt(label, "open: %d", cnt);
+    }
+}
+static void btn_event_cb_close(lv_event_t * e)
+{
+    lv_event_code_t code = lv_event_get_code(e);
+    lv_obj_t * btn = lv_event_get_target(e);
+    if(code == LV_EVENT_CLICKED) {
+        static uint8_t cnt = 0;
+        cnt++;
+        HAL_GPIO_WritePin(GPIOB,GPIO_PIN_2,GPIO_PIN_RESET);
+        /*Get the first child of the button which is the label and change its text*/
+        lv_obj_t * label = lv_obj_get_child(btn, 0);
+        lv_label_set_text_fmt(label, "close: %d", cnt);
+    }
+}
+/**
+ * Create a button with a label and react on click event.
+ */
+void lv_example_get_started_1(void)
+{
+    lv_obj_t * btn = lv_btn_create(lv_scr_act());     /*Add a button the current screen*/
+    lv_obj_set_pos(btn, 120, 45);                            /*Set its position*/
+    lv_obj_set_size(btn, 80, 50);                          /*Set its size*/
+    lv_obj_add_event_cb(btn, btn_event_cb_open, LV_EVENT_ALL, NULL);           /*Assign a callback to the button*/
+
+    lv_obj_t * label = lv_label_create(btn);          /*Add a label to the button*/
+    lv_label_set_text(label, "open");                     /*Set the labels text*/
+    lv_obj_center(label);
+
+
+    lv_obj_t * btn2 = lv_btn_create(lv_scr_act());     /*Add a button the current screen*/
+    lv_obj_set_pos(btn2, 220, 45);                            /*Set its position*/
+    lv_obj_set_size(btn2, 80, 50);                          /*Set its size*/
+    lv_obj_add_event_cb(btn2, btn_event_cb_close, LV_EVENT_ALL, NULL);           /*Assign a callback to the button*/
+
+    lv_obj_t * label2 = lv_label_create(btn2);          /*Add a label to the button*/
+    lv_label_set_text(label2, "close");                     /*Set the labels text*/
+    lv_obj_center(label2);
+}
+
 void test()
 {
     LV_IMG_DECLARE(emoji_F617);
@@ -150,14 +202,14 @@ void test()
 
     lv_example_slider_1();
     anim_show_2();
+    lv_example_get_started_1();
+    // lv_obj_t *parent = lv_obj_create(lv_scr_act());
+    // lv_obj_set_size(parent, 50, 50);
+    // lv_obj_set_style_bg_color(parent, lv_palette_main(LV_PALETTE_BLUE), 0);
+    // lv_obj_align(parent, LV_ALIGN_BOTTOM_MID, 0, -50);
 
-    lv_obj_t *parent = lv_obj_create(lv_scr_act());
-    lv_obj_set_size(parent, 100, 100);
-    lv_obj_set_style_bg_color(parent, lv_palette_main(LV_PALETTE_BLUE), 0);
-    lv_obj_align(parent, LV_ALIGN_BOTTOM_LEFT, 0, 0);
-
-    lv_obj_t *child = lv_obj_create(parent);
-    lv_obj_set_size(child, 50, 50);
-    lv_obj_set_style_bg_color(child, lv_palette_main(LV_PALETTE_GREEN), 0);
-    lv_obj_align(child, LV_ALIGN_CENTER, 0, 0);
+    // lv_obj_t *child = lv_obj_create(parent);
+    // lv_obj_set_size(child, 20, 20);
+    // lv_obj_set_style_bg_color(child, lv_palette_main(LV_PALETTE_GREEN), 0);
+    // lv_obj_align(child, LV_ALIGN_CENTER, 0, 0);
 }
