@@ -217,8 +217,9 @@ static bool touchpad_is_pressed(void)
 static void touchpad_get_xy(lv_coord_t * x, lv_coord_t * y)
 {
     /*Your code comes here*/
-    (*x) = ft6336_read_x();
-    (*y) = ft6336_read_y();
+	ft6336_read_xy((uint16_t *)x,(uint16_t *)y);
+//    (*x) = ft6336_read_x();
+//    (*y) = ft6336_read_y();
 }
 
 /*------------------

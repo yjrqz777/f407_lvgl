@@ -34,6 +34,10 @@
 #include "lv_port_disp.h"
 #include "lv_port_indev.h"
 #include "ft6336.h"
+
+
+#define blk_value(n) n<100?n=100:n=n;n>1000?n=1000:n=n
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -62,13 +66,13 @@ int fgetc(FILE * f)
 
 
 
-void timeCallBackTask(void);
-void timeCallBackTask(void)
-{
-	//闪烁LED1
-	lv_tick_inc(1);
-//	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_2,1);
-}
+//void timeCallBackTask(void);
+//void timeCallBackTask(void)
+//{
+//	//闪烁LED1
+//	lv_tick_inc(1);
+////	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_2,1);
+//}
 
 
 #define CANVAS_WIDTH  100
@@ -154,17 +158,16 @@ void anim_show_2()
 {
    lv_obj_t * obj = lv_obj_create(lv_scr_act());      //创建一个对象
    lv_obj_set_style_bg_color(obj,lv_palette_main(LV_PALETTE_RED),0); //设置背景颜色
-   lv_obj_set_style_radius(obj,LV_RADIUS_CIRCLE,0);   //设置样式圆角
-
-   lv_obj_align(obj,LV_ALIGN_LEFT_MID,10,0);          //居中样式
+   lv_obj_set_style_radius(obj,0xFFF,0);   //设置样式圆角
+   lv_obj_align(obj,LV_ALIGN_TOP_LEFT,10,0);          //居中样式
 
    lv_anim_t a;                                       //创建动画样式
    lv_anim_init(&a);                                  //初始化动画
    lv_anim_set_var(&a,obj);                           //给动画设置一个变量
    lv_anim_set_values(&a,5,70);                      //设置一个动画值
-   lv_anim_set_time(&a,5000);                         //设置动画时间
+   lv_anim_set_time(&a,1000);                         //设置动画时间
    lv_anim_set_playback_delay(&a,300);                //回放延时 使动画回放时，正向方向准备好了
-   lv_anim_set_playback_time(&a,5000);                 //回放时间
+   lv_anim_set_playback_time(&a,1000);                 //回放时间
    lv_anim_set_repeat_delay(&a,5);                  //重复延时
    lv_anim_set_repeat_count(&a,LV_ANIM_REPEAT_INFINITE); //重复计数次数
    lv_anim_set_path_cb(&a,lv_anim_path_ease_in_out);  //设置动画播放路径
@@ -348,8 +351,13 @@ void lv_example_slider_1(void)
 static void slider_event_cb(lv_event_t * e)
 {
     lv_obj_t * slider = lv_event_get_target(e);
+		uint16_t value = (int)lv_slider_get_value(slider)*10;
     char buf[8];
-    lv_snprintf(buf, sizeof(buf), "%d%%", (int)lv_slider_get_value(slider));
+		uint16_t blk = 300;
+    lv_snprintf(buf, sizeof(buf), "%d%%", value/10);
+		blk = value<300?300:value;
+
+		htim2.Instance->CCR1 = blk;
     lv_label_set_text(slider_label, buf);
     lv_obj_align_to(slider_label, slider, LV_ALIGN_OUT_BOTTOM_MID, 0, 10);
 }
@@ -396,8 +404,14 @@ int main(void)
   MX_USART6_UART_Init();
   MX_TIM4_Init();
   MX_I2C2_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 	HAL_TIM_Base_Start_IT(&htim4);
+
+
+  HAL_TIM_PWM_Start(&htim2,TIM_CHANNEL_1);
+//	htim2.Instance->CCR1 = 300;
+//	__HAL_TIM_SetCompare(&htim2, TIM_CHANNEL_1, 300);
 
   /* USER CODE END 2 */
 
@@ -419,7 +433,10 @@ int main(void)
     lv_obj_set_pos(img, 35, 35);//设置图片位置
     lv_img_set_angle(img, 30);//设置图片旋转角
     lv_img_set_zoom(img,200);//设置图片缩放
-
+	
+		
+		lv_obj_t * box =lv_checkbox_create(lv_scr_act());
+		lv_obj_align(box,LV_ALIGN_BOTTOM_LEFT,0,0);
 
 
 //		anim_show_2();
@@ -441,6 +458,17 @@ int main(void)
 //		lv_timer_handler();
 		lv_example_slider_1();
 		anim_show_2();
+		
+		    lv_obj_t *parent = lv_obj_create(lv_scr_act());
+    lv_obj_set_size(parent,100,100);
+    lv_obj_set_style_bg_color(parent,lv_palette_main(LV_PALETTE_BLUE),0);
+    lv_obj_align(parent,LV_ALIGN_CENTER,0,0);
+
+    lv_obj_t *child = lv_obj_create(parent);
+    lv_obj_set_size(child,50,50);
+    lv_obj_set_style_bg_color(child,lv_palette_main(LV_PALETTE_GREEN),0);
+    lv_obj_align(child,LV_ALIGN_CENTER,0,0);
+
 //	uint8_t data2= 0x05;
 //	uint8_t data23[2];
 

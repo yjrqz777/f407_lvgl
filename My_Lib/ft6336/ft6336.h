@@ -8,7 +8,7 @@
 
 
 extern uint8_t do_i2cdetect_cmd();
-extern void ft6336_read_xy();
+extern void ft6336_read_xy(uint16_t *x,uint16_t *y);
 extern uint8_t ft6336_enable();
 
 extern uint16_t ft6336_read_x();

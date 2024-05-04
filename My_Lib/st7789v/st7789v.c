@@ -232,7 +232,7 @@ void lcd_test()
 
 void st7789v_init()
 {
-		LCD_BLK(0);
+		//LCD_BLK(0);
 		LCD_CS(0);
     HAL_Delay(100);
 //    
@@ -499,7 +499,7 @@ LCD_Write_Cmd(0x20);
 LCD_Write_Cmd(0x29);
 
 
-		LCD_BLK(1);
+		////LCD_BLK(1);
     /* ÇåÆÁÎª°×É« */
     LCD_Clear(WHITE);
 	  LCD_Clear(GREEN);

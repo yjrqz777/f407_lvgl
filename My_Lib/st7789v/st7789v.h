@@ -24,15 +24,11 @@
 											HAL_GPIO_WritePin(lcd_rest_GPIO_Port,lcd_rest_Pin,GPIO_PIN_SET):\
 											HAL_GPIO_WritePin(lcd_rest_GPIO_Port,lcd_rest_Pin,GPIO_PIN_RESET)\
 										)
-#define LCD_BLK(n) (n?\
-											HAL_GPIO_WritePin(lcd_blk_GPIO_Port,lcd_blk_Pin,GPIO_PIN_SET):\
-											HAL_GPIO_WritePin(lcd_blk_GPIO_Port,lcd_blk_Pin,GPIO_PIN_RESET)\
-										)
-										
-//#define LCD_DC(n) (n?\
-//											HAL_GPIO_WritePin(lcd_dc_GPIO_Port,lcd_dc_Pin,GPIO_PIN_RESET):\
-//											HAL_GPIO_WritePin(lcd_dc_GPIO_Port,lcd_dc_Pin,GPIO_PIN_SET)\
+//#define LCD_BLK(n) (n?\
+//											HAL_GPIO_WritePin(lcd_blk_GPIO_Port,lcd_blk_Pin,GPIO_PIN_SET):\
+//											HAL_GPIO_WritePin(lcd_blk_GPIO_Port,lcd_blk_Pin,GPIO_PIN_RESET)\
 //										)
+										
 										
 #define LCD_DC(n) (n?\
 											HAL_GPIO_WritePin(lcd_dc_GPIO_Port,lcd_dc_Pin,GPIO_PIN_SET):\
