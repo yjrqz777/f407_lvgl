@@ -506,7 +506,7 @@ LCD_Write_Cmd(0x29);
 //    LCD_color_point(40,40,RED);
 //		HAL_Delay(1000);
 		lcd_test();
-#if DUBEG
+        #if DUBEG
 
 		lcd_test();
 		
