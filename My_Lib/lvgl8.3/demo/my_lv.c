@@ -7,8 +7,8 @@ void lvgl_tick(void const *argument)
 {
     /* USER CODE BEGIN lvgl_tick */
     /* Infinite loop */
-	HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_2);
-//    lv_tick_inc(1);
+	
+   lv_tick_inc(1);
     /* USER CODE END lvgl_tick */
 }
 
@@ -125,9 +125,9 @@ void anim_show_2()
     lv_anim_init(&a);                                      // 初始化动画
     lv_anim_set_var(&a, obj);                              // 给动画设置一个变量
     lv_anim_set_values(&a, 5, 70);                         // 设置一个动画值
-    lv_anim_set_time(&a, 1000);                            // 设置动画时间
+    lv_anim_set_time(&a, 3000);                            // 设置动画时间
     lv_anim_set_playback_delay(&a, 300);                   // 回放延时 使动画回放时，正向方向准备好了
-    lv_anim_set_playback_time(&a, 1000);                   // 回放时间
+    lv_anim_set_playback_time(&a, 3000);                   // 回放时间
     lv_anim_set_repeat_delay(&a, 5);                       // 重复延时
     lv_anim_set_repeat_count(&a, LV_ANIM_REPEAT_INFINITE); // 重复计数次数
     lv_anim_set_path_cb(&a, lv_anim_path_ease_in_out);     // 设置动画播放路径
@@ -154,7 +154,7 @@ void test()
     lv_obj_t *parent = lv_obj_create(lv_scr_act());
     lv_obj_set_size(parent, 100, 100);
     lv_obj_set_style_bg_color(parent, lv_palette_main(LV_PALETTE_BLUE), 0);
-    lv_obj_align(parent, LV_ALIGN_CENTER, 0, 0);
+    lv_obj_align(parent, LV_ALIGN_BOTTOM_LEFT, 0, 0);
 
     lv_obj_t *child = lv_obj_create(parent);
     lv_obj_set_size(child, 50, 50);

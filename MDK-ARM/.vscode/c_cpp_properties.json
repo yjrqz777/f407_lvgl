@@ -22,6 +22,9 @@
                 "e:\\Documents\\stm32f103c6\\f407_lvgl\\My_Lib\\lvgl8.3\\src\\misc",
                 "e:\\Documents\\stm32f103c6\\f407_lvgl\\My_Lib\\lvgl8.3\\src\\widgets",
                 "e:\\Documents\\stm32f103c6\\f407_lvgl\\My_Lib\\ft6336",
+                "e:\\Documents\\stm32f103c6\\f407_lvgl\\Middlewares\\Third_Party\\FreeRTOS\\Source\\include",
+                "e:\\Documents\\stm32f103c6\\f407_lvgl\\Middlewares\\Third_Party\\FreeRTOS\\Source\\CMSIS_RTOS",
+                "e:\\Documents\\stm32f103c6\\f407_lvgl\\Middlewares\\Third_Party\\FreeRTOS\\Source\\portable\\RVDS\\ARM_CM4F",
                 "F:\\keil\\mdk\\ARM\\ARMCC\\include",
                 "e:\\Documents\\stm32f103c6\\f407_lvgl\\MDK-ARM",
                 "e:\\Documents\\stm32f103c6\\f407_lvgl\\Core\\Src",
@@ -72,7 +75,9 @@
                 "e:\\Documents\\stm32f103c6\\f407_lvgl\\My_Lib\\lvgl8.3\\src\\extra\\widgets\\spinner",
                 "e:\\Documents\\stm32f103c6\\f407_lvgl\\My_Lib\\lvgl8.3\\src\\extra\\widgets\\tabview",
                 "e:\\Documents\\stm32f103c6\\f407_lvgl\\My_Lib\\lvgl8.3\\src\\extra\\widgets\\tileview",
-                "e:\\Documents\\stm32f103c6\\f407_lvgl\\My_Lib\\lvgl8.3\\src\\extra\\widgets\\win"
+                "e:\\Documents\\stm32f103c6\\f407_lvgl\\My_Lib\\lvgl8.3\\src\\extra\\widgets\\win",
+                "e:\\Documents\\stm32f103c6\\f407_lvgl\\Middlewares\\Third_Party\\FreeRTOS\\Source",
+                "e:\\Documents\\stm32f103c6\\f407_lvgl\\Middlewares\\Third_Party\\FreeRTOS\\Source\\portable\\MemMang"
             ],
             "defines": [
                 "USE_HAL_DRIVER",

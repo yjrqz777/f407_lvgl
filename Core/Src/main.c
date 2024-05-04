@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 #include "dma.h"
 #include "i2c.h"
 #include "spi.h"
@@ -79,6 +80,7 @@ int fgetc(FILE * f)
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void MX_FREERTOS_Init(void);
 /* USER CODE BEGIN PFP */
 
 
@@ -146,18 +148,26 @@ int main(void)
 //  st7789v_init();
   /* USER CODE END 2 */
 
+  /* Call init function for freertos objects (in cmsis_os2.c) */
+  MX_FREERTOS_Init();
+
+  /* Start scheduler */
+  osKernelStart();
+
+  /* We should never get here as control is now taken by the scheduler */
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 //	do_i2cdetect_cmd();
- 	lv_init();
+// 	lv_init();
 
- 	lv_port_disp_init();
-	
-lv_port_indev_init();
-HAL_Delay(500);
-//lv_example_canvas_2();
+// 	lv_port_disp_init();
+//	
+//	lv_port_indev_init();
+//	HAL_Delay(500);
+////lv_example_canvas_2();
 
-test();
+//	test();
 
 	
 		
@@ -201,9 +211,9 @@ test();
 		
 //		lv_tick_inc(1);
 //		ft6336_read_xy();
-lv_timer_handler();
+//lv_timer_handler();
 
-		HAL_Delay(10);
+//		HAL_Delay(10);
 		
 //	HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_2);
 		
