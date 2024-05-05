@@ -179,7 +179,7 @@ void lvgl_task_func(void const *argument)
                                             (void *) 0,
                                             (TimerCallbackFunction_t)lvgl_tick);
   xTimerStart(xTimerHandle, 0);
-
+	do_i2cdetect_cmd();
   lv_init();
 
   lv_port_disp_init();

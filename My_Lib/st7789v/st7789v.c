@@ -104,7 +104,7 @@ void ST7789V_SetDir(uint8_t Dir_Mode)
 void LCD_Clear(uint16_t color)
 {
 
-    uint32_t buf_size = (320 * 280);
+    uint32_t buf_size = (320 * 240);
     uint8_t *buf = (uint8_t *)malloc(buf_size * 2);
     //		printf("-%d-%d-%d-%d-w=%d,,h=%d\n", x1, y1, x2, y2,width,height);
     HAL_Delay(1);
@@ -114,7 +114,7 @@ void LCD_Clear(uint16_t color)
         return;
     }
 
-    LCD_Address_Set(0, 0, 320, 280);
+    LCD_Address_Set(0, 0, 320, 240);
     LCD_DC(1);
     //		printf("-1--%d-%d-%d---\n",width,height,buf_size);
     for (uint32_t i = 0; i < buf_size; i++)
@@ -186,7 +186,7 @@ void LCD_color_point(uint16_t x1, uint16_t y1, uint16_t color)
 
 void lcd_test()
 {
-    LCD_color_fill(0, 0, 320, 280, BLACK);
+    LCD_color_fill(0, 0, 320, 240, BLACK);
     //		LCD_color_fill(0,0,40,40,RED);
     LCD_color_fill(40, 40, 100, 100, RED);
 

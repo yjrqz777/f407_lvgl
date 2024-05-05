@@ -116,12 +116,14 @@ static void anim_size_cb(void *var, int32_t v)
  *  参    数 ： 无
  *  函数功能 ： 按键联动，实现Label动画显示
  *************************************************/
-void anim_show_2()
+
+
+lv_obj_t * anim_show_2()
 {
     lv_obj_t *obj = lv_obj_create(lv_scr_act());                        // 创建一个对象
     lv_obj_set_style_bg_color(obj, lv_palette_main(LV_PALETTE_RED), 0); // 设置背景颜色
     lv_obj_set_style_radius(obj, 0xFFF, 0);                             // 设置样式圆角
-    lv_obj_align(obj, LV_ALIGN_TOP_LEFT, 10, 0);                        // 居中样式
+    lv_obj_align(obj, LV_ALIGN_BOTTOM_LEFT, 10, 0);                        // 居中样式
 
     lv_anim_t a;                                           // 创建动画样式
     lv_anim_init(&a);                                      // 初始化动画
@@ -139,6 +141,7 @@ void anim_show_2()
     lv_anim_set_exec_cb(&a, anim_x_cb);    // 给动画设置一个功能 回调函数为x轴值
     lv_anim_set_values(&a, 10, 240);       // 给动画设置一个值
     lv_anim_start(&a);                     // 开始动画
+		return obj;
 }
 
 static void btn_event_cb_open(lv_event_t * e)
@@ -194,6 +197,7 @@ void lv_example_get_started_1(void)
     lv_obj_center(label2);
 }
 
+lv_obj_t *objss = NULL;                        // 创建一个对象
 
 
 static void btn_event_colorwheel(lv_event_t * e)
@@ -201,7 +205,8 @@ static void btn_event_colorwheel(lv_event_t * e)
     // lv_event_code_t code = lv_event_get_code(e);
     lv_obj_t * wheel = lv_event_get_target(e);
     lv_color_t color = lv_colorwheel_get_rgb(wheel);
-    printf("color: %X\r\n", color);
+		lv_obj_set_style_bg_color(objss, color, 0); // 设置背景颜色
+//    printf("color: %04X\r\n", color);
 
 }
 
@@ -226,7 +231,7 @@ void test()
     lv_img_set_zoom(img, 200);   // 设置图片缩放
 
     lv_example_slider_1();
-    anim_show_2();
+    objss = anim_show_2();
     lv_example_get_started_1();
     lv_example_colorwheel_1();
     // lv_obj_t *parent = lv_obj_create(lv_scr_act());

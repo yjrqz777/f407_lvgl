@@ -1,11 +1,11 @@
-# stm32f407-hal-dma-lvgl8.3-st7789v-ft6336-320*280-freertos
+# stm32f407-hal-dma-lvgl8.3-st7789v-ft6336-320*240-freertos
 
 | 硬件      | 使能 | 软件     | 使能 |
 |-----------|------|----------|------|
 | stm32f407 | ✅    | hal      | ✅    |
 | st7789v   | ✅    | dma      | ✅    |
 | ft6336    | ✅    | lvgl8.3  | ✅    |
-| 320*280   | ✅    | freertos | ✅    |
+| 320*240   | ✅    | freertos | ✅    |
 
 ## st7789v引脚      & ft6336引脚
 

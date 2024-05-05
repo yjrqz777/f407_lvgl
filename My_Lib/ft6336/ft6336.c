@@ -32,11 +32,16 @@ uint8_t do_i2cdetect_cmd()
         }
         printf("\r\n");
     }
-    return 0;
-    //		uint8_t data[8]={0};
-    //		HAL_I2C_Mem_Read(&hi2c2,(0x38 << 1) | 1,0xA5,1,data, 1,1000);
-    //		for(int i = 0;i<1;i++)
-    //		printf("-%02X-\r\n",data[i]);
+   return 0;
+    // 		uint8_t data[8]={0};
+    // 		HAL_I2C_Mem_Read(&hi2c2,(0x38 << 1) | 1,0x85,1,data, 1,1000);
+	// 			printf("-%02X-\r\n",data[0]);
+	// 		uint8_t data2 = 0xc8;
+    // // uint8_t data23[2];
+	// 		HAL_I2C_Mem_Write(&hi2c2, (0x38 << 1) | 0, 0x85, 1, &data2, 1, 1000);
+    // //		for(int i = 0;i<1;i++)
+	// 			HAL_I2C_Mem_Read(&hi2c2,(0x38 << 1) | 1,0x85,1,data, 1,1000);
+    // 		printf("-%02X-\r\n",data[0]);
 }
 
 void ft6336_set_sleep_time(uint8_t time)
@@ -79,9 +84,10 @@ void ft6336_read_xy(uint16_t *x, uint16_t *y)
     //				for(int j=0;j<10;j++);
 
     //		HAL_I2C_Mem_Read(&hi2c2, (FT6636ADDR << 1) | 1, 0x03, 1, data, 4,1000);
-    *x = (data[2] & 0x0f) << 8 | data[3];
-    *y = 280 - ((data[0] & 0x0f) << 8 | data[1])-40;
-    // printf("x: %d, y: %d\r\n", *x, *y);
+    *x = ((data[2] & 0x0f) << 8) + data[3];
+    *y = 240 - ((data[0] & 0x0f) << 8 | data[1]);
+//		*y = (((data[0] & 0x0f) << 8) + data[1]);
+    printf("x: %d, y: %d\r\n", *x, *y);
 
     //    printf("\r\n");
     //		return data;
@@ -122,7 +128,7 @@ uint16_t ft6336_read_y()
         printf("%d", (data3[1] >> i) & 0x01);
     }
     printf(" ");
-    y = 280 - y - 40;
+    y = 240 - y;
     printf("y: %d,data3[0]:%02x,data4[0]:%02x", y, data3[0], data4[0]);
     printf("\r\n");
     return y;
