@@ -140,7 +140,7 @@ void lv_port_disp_init(void)
 static void disp_init(void)
 {
     /*You code here*/
-	st7789v_init();
+	Drvst7789Init();
 }
 
 volatile bool disp_flush_enabled = true;
@@ -193,8 +193,11 @@ static void disp_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_colo
         }
 #else
 //				
-				LCD_color_fill_lvgl(area->x1,area->y1,area->x2,area->y2,color_p);
-//			printf("1---%x\n",color_p);
+    DrvSt7789FillLvgl(area->x1,
+                      area->y1,
+                      area->x2,
+                      area->y2,
+                      color_p);
 #endif
 //    }
 

@@ -1,465 +1,533 @@
 
 #include "st7789v.h"
 #include "font.h"
-// #include "FreeRTOS.h"
-// #include "task.h"
 #include "spi.h"
-#include "lv_port_disp.h"
 #include <stdlib.h>
-/**
- * @brief    SPI 发送字节函数
- * @param    TxData    要发送的数据
- * @param    size    发送数据的字节大小
- * @return  0:写入成功,其他:写入失败
- */
-uint8_t SPI_WriteByte(uint8_t *TxData, uint16_t size)
+
+
+
+static uint8_t DrvSpiSendData(uint8_t *Data, uint16_t Size)
 {
-    //		printf("%x\n",*TxData);
-    return HAL_SPI_Transmit(&hspi1, TxData, size, 1000);
-    //	return HAL_SPI_Transmit_DMA(&hspi1,TxData,size);
+    LCD_CS(0);
+    HAL_StatusTypeDef status = HAL_SPI_Transmit(&hspi2, Data, Size, 1000);
+    LCD_CS(1);
+    return (status == HAL_OK) ? 1 : 0;
 }
 
-/**
- * @brief   写命令到LCD
- * @param   cmd —— 需要发送的命令
- * @return  none
- */
-static void LCD_Write_Cmd(uint8_t cmd)
+static uint8_t DrvSt7789Send(eSendModeDef SendMode, uint8_t Data)
 {
-    //		LCD_DC(0);
-    LCD_DC(0);
-    SPI_WriteByte(&cmd, 1);
+    if (SendMode == E_SEND_CMD)
+    {
+        LCD_DC(0);
+    }
+    else if (SendMode == E_SEND_DATA)
+    {
+        LCD_DC(1);
+    }
+    DrvSpiSendData(&Data, 1);
 }
 
-/**
- * @brief   写数据到LCD
- * @param   dat —— 需要发送的数据
- * @return  none
- */
-static void LCD_Write_Data(uint8_t dat)
+static void DrvSt7789SendU16(uint16_t Data)
 {
-    //    LCD_DC(1);
+    uint8_t Data16[2] = {Data >> 8, Data & 0xFF};
     LCD_DC(1);
-    SPI_WriteByte(&dat, 1);
+    DrvSpiSendData(Data16, 2);
 }
 
-void LCD_Write_Data2Bytes(uint16_t dat)
+
+void DrvSt7789SetDir(uint8_t dir_mode)
 {
-    //    LCD_DC(1);
-    LCD_DC(1);
-    uint8_t dat_temp = dat >> 8;
-    uint8_t dat_temp2 = dat;
-    SPI_WriteByte(&dat_temp, 1);
-    SPI_WriteByte(&dat_temp2, 1);
+    static const uint8_t madctl_table[4] = {0x00, 0xC0, 0x70, 0xA0};
+
+    if (dir_mode > 3)
+        dir_mode = 0;
+
+    DrvSt7789Send(E_SEND_CMD,0x36);
+    DrvSt7789Send(E_SEND_DATA, madctl_table[dir_mode]);
 }
 
-/**
- * @brief   设置数据写入LCD显存区域
- * @param   x1,y1    —— 起点坐标
- * @param   x2,y2    —— 终点坐标
- * @return  none
- */
-void LCD_Address_Set(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
+void DrvSt7789SetAddress(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 {
     /* 指定X方向操作区域 */
-    LCD_Write_Cmd(0x2a);
-    //	LCD_Write_Data2Bytes(x1);
-    //	LCD_Write_Data2Bytes(x2);
-    LCD_Write_Data(x1 >> 8);
-    LCD_Write_Data(x1);
-    LCD_Write_Data(x2 >> 8);
-    LCD_Write_Data(x2);
+    DrvSt7789Send(E_SEND_CMD,0x2a);
+    DrvSt7789SendU16(x1);
+    DrvSt7789SendU16(x2);
 
     /* 指定Y方向操作区域 */
-    LCD_Write_Cmd(0x2b);
-    //	LCD_Write_Data2Bytes(y1);
-    //	LCD_Write_Data2Bytes(y2);
-    LCD_Write_Data(y1 >> 8);
-    LCD_Write_Data(y1);
-    LCD_Write_Data(y2 >> 8);
-    LCD_Write_Data(y2);
+    DrvSt7789Send(E_SEND_CMD,0x2b);
+    DrvSt7789SendU16(y1);
+    DrvSt7789SendU16(y2);
 
     /* 发送该命令，LCD开始等待接收显存数据 */
-    LCD_Write_Cmd(0x2C);
+    DrvSt7789Send(E_SEND_CMD,0x2C);
 }
 
-void ST7789V_SetDir(uint8_t Dir_Mode)
-{
-    LCD_Write_Cmd(0x36); /*显示方向*/
-    if (Dir_Mode == 0)
-        LCD_Write_Data(0x00);
-    else if (Dir_Mode == 1)
-        LCD_Write_Data(0xC0);
-    else if (Dir_Mode == 2)
-        LCD_Write_Data(0x70);
-    else
-        LCD_Write_Data(0xA0);
-}
 
-/**
- * @brief   以一种颜色清空LCD屏
- * @param   color —— 清屏颜色(16bit)
- * @return  none
- */
-void LCD_Clear(uint16_t color)
-{
 
-    uint32_t buf_size = (320 * 240);
-    uint8_t *buf = (uint8_t *)malloc(buf_size * 2);
-    //		printf("-%d-%d-%d-%d-w=%d,,h=%d\n", x1, y1, x2, y2,width,height);
-    HAL_Delay(1);
-    if (buf == NULL)
+void DrvSt7789Clear(uint16_t color)
+{
+    #define MAX_SEND 512
+    uint32_t i;
+    uint32_t total_pixels = (uint32_t)LCD_W * LCD_H;
+    uint8_t high = (uint8_t)(color >> 8);
+    uint8_t low  = (uint8_t)(color & 0xFF);
+    uint8_t buf[MAX_SEND];
+    uint16_t pixels_per_buf = sizeof(buf) / 2;
+
+    for (i = 0; i < pixels_per_buf; i++)
     {
-        // 处理内存分配失败的情况
-        return;
+        buf[2 * i]     = high;
+        buf[2 * i + 1] = low;
     }
 
-    LCD_Address_Set(0, 0, 320, 240);
-    LCD_DC(1);
-    //		printf("-1--%d-%d-%d---\n",width,height,buf_size);
-    for (uint32_t i = 0; i < buf_size; i++)
-    {
-
-        buf[i * 2] = (color >> 8) & 0xFF;
-        buf[i * 2 + 1] = color & 0xFF;
-    }
-
-    HAL_SPI_Transmit(&hspi1, buf, buf_size * 2, 1000);
-    ////			HAL_SPI_Transmit(&hspi1,(uint8_t *)color,buf_size*2,1000);
-    //			HAL_SPI_Transmit_DMA(&hspi1,buf,buf_size*2);
-    // 指定显存操作地址为指定区域
-    free(buf);
-}
-
-void LCD_color_fill_lvgl(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, lv_color_t *color)
-{
-
-    uint16_t width = (x2 - x1) + 1;
-    uint16_t height = (y2 - y1) + 1;
-    uint32_t buf_size = (width * height);
-    uint8_t *buf = (uint8_t *)malloc(buf_size * 2);
-    //		printf("-%d-%d-%d-%d-w=%d,,h=%d\n", x1, y1, x2, y2,width,height);
-    HAL_Delay(1);
-    if (buf == NULL)
-    {
-        // 处理内存分配失败的情况
-        return;
-    }
-
-    LCD_Address_Set(x1, y1, x2, y2);
-    LCD_DC(1);
-    LCD_DC(1);
-    //		printf("-1--%d-%d-%d---\n",width,height,buf_size);
-    for (uint32_t i = 0; i < buf_size; i++)
-    {
-
-        buf[i * 2] = (color->full >> 8) & 0xFF;
-        buf[i * 2 + 1] = color->full & 0xFF;
-        color++;
-    }
-
-    //    HAL_SPI_Transmit(&hspi1, buf,buf_size*2,1000);
-    HAL_SPI_Transmit_DMA(&hspi1, buf, buf_size * 2);
-    free(buf);
-}
-
-void LCD_color_fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t color)
-{
-    uint16_t width = x2 - x1;
-    uint16_t height = y2 - y1;
-    uint32_t buf_size = width * height * 2; // 16-bit color, 2 bytes per pixel
-    uint8_t *buf = (uint8_t *)malloc(buf_size);
+    DrvSt7789SetAddress(0, 0, LCD_W - 1, LCD_H - 1);
 
     LCD_DC(1);
-    LCD_Address_Set(x1, y1, x2, y2);
-    HAL_SPI_Transmit(&hspi1, buf, buf_size * 2, 1000);
-
-    free(buf);
-}
-
-void LCD_color_point(uint16_t x1, uint16_t y1, uint16_t color)
-{
-
-    LCD_Address_Set(x1, y1, x1, y1);
-    LCD_Write_Data2Bytes(color);
-}
-
-void lcd_test()
-{
-    LCD_color_fill(0, 0, 320, 240, BLACK);
-    //		LCD_color_fill(0,0,40,40,RED);
-    LCD_color_fill(40, 40, 100, 100, RED);
-
-    LCD_color_fill(100, 100, 180, 180, BLUE);
-}
-
-#define DUBEG 0
-
-/**
- * @brief   LCD初始化
- * @param   none
- * @return  none
- */
-
-void st7789v_init()
-{
-    // LCD_BLK(0);
     LCD_CS(0);
-    HAL_Delay(100);
-    //
-    //		HAL_Delay();
+
+    while (total_pixels > 0)
+    {
+        uint16_t send_pixels = (total_pixels > pixels_per_buf) ? pixels_per_buf : (uint16_t)total_pixels;
+        HAL_SPI_Transmit(&hspi2, buf, send_pixels * 2, 1000);
+        // DrvSpiSendData(buf, send_pixels * 2);
+        total_pixels -= send_pixels;
+    }
+
+    LCD_CS(1);
+}
+
+
+void DrvSt7789DrawPixel(uint16_t x, uint16_t y, uint16_t color)
+{
+    if (x >= LCD_W || y >= LCD_H)
+    {
+        return;
+    }
+
+    DrvSt7789SetAddress(x, y, x, y);
+    DrvSt7789SendU16(color);
+}
+
+
+void DrvSt7789ShowChar(uint16_t x,
+                       uint16_t y,
+                       char ch,
+                       eAsciiFontDef font,
+                       uint16_t fc,
+                       uint16_t bc)
+{
+    uint8_t row, col;
+    uint8_t index;
+
+    if (ch < ' ' || ch > '~')
+    {
+        ch = '?';
+    }
+
+    index = (uint8_t)(ch - ' ');
+
+    if (font == E_FONT_1206)
+    {
+        uint8_t temp;
+
+        for (row = 0; row < 12; row++)
+        {
+            temp = ascii_1206[index][row];
+
+            for (col = 0; col < 6; col++)
+            {
+                // if (temp & (0x20 >> col))
+                if (temp & (1 << col))
+                {
+                    DrvSt7789DrawPixel(x + col, y + row, fc);
+                }
+                else
+                {
+                    DrvSt7789DrawPixel(x + col, y + row, bc);
+                }
+            }
+        }
+    }
+    else if (font == E_FONT_2412)
+    {
+        uint16_t temp;
+
+        for (row = 0; row < 24; row++)
+        {
+            temp = ((uint16_t)ascii_2412[index][row * 2 + 1] << 8) |
+                    (uint16_t)ascii_2412[index][row * 2];
+
+            for (col = 0; col < 12; col++)
+            {
+                // if (temp & (0x800 >> col))
+                if (temp & (0x001 << col))
+
+                {
+                    DrvSt7789DrawPixel(x + col, y + row, fc);
+                }
+                else
+                {
+                    DrvSt7789DrawPixel(x + col, y + row, bc);
+                }
+            }
+        }
+    }
+}
+void DrvSt7789ShowString(uint16_t x,
+                         uint16_t y,
+                         const char *str,
+                         eAsciiFontDef font,
+                         uint16_t fc,
+                         uint16_t bc)
+{
+    uint8_t char_w;
+    uint8_t char_h;
+
+    if (str == NULL)
+    {
+        return;
+    }
+
+    if (font == E_FONT_1206)
+    {
+        char_w = 6;
+        char_h = 12;
+    }
+    else
+    {
+        char_w = 12;
+        char_h = 24;
+    }
+
+    while (*str != '\0')
+    {
+        if (x + char_w > LCD_W)
+        {
+            x = 0;
+            y += char_h;
+        }
+
+        if (y + char_h > LCD_H)
+        {
+            break;
+        }
+
+        DrvSt7789ShowChar(x, y, *str, font, fc, bc);
+        x += char_w;
+        str++;
+    }
+}
+
+
+void DrvSt7789FillRect(uint16_t x, uint16_t y, uint16_t w, uint16_t h, uint16_t color)
+{
+    #define MAX_SEND 1024
+
+    uint32_t i;
+    uint32_t total_pixels;
+    uint8_t high;
+    uint8_t low;
+    uint8_t buf[MAX_SEND];
+    uint16_t pixels_per_buf;
+
+    if (x >= LCD_W || y >= LCD_H)
+    {
+        return;
+    }
+
+    if ((x + w) > LCD_W)
+    {
+        w = LCD_W - x;
+    }
+
+    if ((y + h) > LCD_H)
+    {
+        h = LCD_H - y;
+    }
+
+    if (w == 0 || h == 0)
+    {
+        return;
+    }
+
+    total_pixels = (uint32_t)w * h;
+    high = (uint8_t)(color >> 8);
+    low  = (uint8_t)(color & 0xFF);
+
+    pixels_per_buf = sizeof(buf) / 2;
+
+    for (i = 0; i < pixels_per_buf; i++)
+    {
+        buf[2 * i]     = high;
+        buf[2 * i + 1] = low;
+    }
+
+    DrvSt7789SetAddress(x, y, x + w - 1, y + h - 1);
+
+    LCD_DC(1);
+    LCD_CS(0);
+
+    while (total_pixels > 0)
+    {
+        uint16_t send_pixels = (total_pixels > pixels_per_buf) ? pixels_per_buf : (uint16_t)total_pixels;
+        HAL_SPI_Transmit(&hspi2, buf, send_pixels * 2, 1000);
+        total_pixels -= send_pixels;
+    }
+
+    LCD_CS(1);
+}
+
+
+
+void DrvSt7789FillLvgl(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, lv_color_t *color)
+{
+    uint32_t size;
+
+    if (x1 >= LCD_W || y1 >= LCD_H || x2 >= LCD_W || y2 >= LCD_H)
+    {
+        return;
+    }
+
+    if (x1 > x2 || y1 > y2)
+    {
+        return;
+    }
+
+    size = (uint32_t)(x2 - x1 + 1) * (y2 - y1 + 1);
+
+    DrvSt7789SetAddress(x1, y1, x2, y2);
+
+    LCD_DC(1);
+    LCD_CS(0);
+
+    HAL_SPI_Transmit(&hspi2, (uint8_t *)color, size * 2, 1000);
+
+    LCD_CS(1);
+}
+
+
+// void DrvSt7789FillLvgl(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, lv_color_t *color)
+// {
+//     uint32_t size = (x2 - x1 + 1) * (y2 - y1 + 1);
+
+//     DrvSt7789SetAddress(x1, y1, x2, y2);
+
+//     LCD_DC(1);
+//     LCD_CS(0);
+
+//     for(uint32_t i = 0; i < size; i++)
+//     {
+//         uint16_t c = color[i].full;
+
+//         // 高低字节交换
+//         c = (c << 8) | (c >> 8);
+
+//         HAL_SPI_Transmit(&hspi2, (uint8_t *)&c, 2, HAL_MAX_DELAY);
+//     }
+
+//     LCD_CS(1);
+// }
+
+// void DrvSt7789FillLvgl(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, lv_color_t *color)
+// {
+//     uint16_t width  = (x2 - x1) + 1;
+//     uint16_t height = (y2 - y1) + 1;
+
+//     static uint8_t line_buf[240 * 2];
+
+//     DrvSt7789SetAddress(x1, y1, x2, y2);
+
+//     LCD_DC(1);
+//     LCD_CS(0);
+
+//     for(uint16_t row = 0; row < height; row++)
+//     {
+//         for(uint16_t col = 0; col < width; col++)
+//         {
+//             uint16_t c = color[row * width + col].full;
+//             line_buf[2 * col]     = (uint8_t)(c >> 8);
+//             line_buf[2 * col + 1] = (uint8_t)(c & 0xFF);
+//         }
+
+//         HAL_SPI_Transmit(&hspi2, line_buf, width * 2, HAL_MAX_DELAY);
+//     }
+
+//     LCD_CS(1);
+// }
+
+void Drvst7789Init(void)
+{
+    // 背光控制
+    LCD_BLK(1);
+    // 芯片选择和复位引脚初始化
+    LCD_CS(1);
     LCD_RST(1);
-    HAL_Delay(100);
+    HAL_Delay(20);
     LCD_RST(0);
-    HAL_Delay(100);
-    LCD_RST(1);
-    HAL_Delay(130);
-    /* 初始化和LCD通信的引脚 */
-    //    HAL_Delay(120);
-
-    /* 关闭睡眠模式 */
-    LCD_Write_Cmd(0x11);
     HAL_Delay(120);
-    ST7789V_SetDir(USE_HORIZONTAL);
-    //    LCD_Write_Cmd(0x36);
-    //    LCD_Write_Data(0x00);
+    LCD_RST(1);
+    HAL_Delay(120);
 
-#if DUBEG
-
-    LCD_Write_Cmd(0x3A);
-    LCD_Write_Data(0x55);
-    //-------------ST7789V Frame rate setting-----------//
-    LCD_Write_Cmd(0xB2); // Porch Setting
-    LCD_Write_Data(0x0C);
-    LCD_Write_Data(0x0C);
-    LCD_Write_Data(0x00);
-    LCD_Write_Data(0x33);
-    LCD_Write_Data(0x33);
-
-    LCD_Write_Cmd(0xB7);  // Gate Control
-    LCD_Write_Data(0x75); // ······12.2v   -10.43v
-    //--------------ST7789V Power setting---------------//
-    LCD_Write_Cmd(0xC2); // VDV and VRH Command Enable
-    LCD_Write_Data(0x01);
-
-    LCD_Write_Cmd(0xC3);  // VRH Set
-    LCD_Write_Data(0x16); // ······4.3+( vcom+vcom offset+vdv)
-
-    LCD_Write_Cmd(0xC4);  // VDV Set
-    LCD_Write_Data(0x20); // 0v
-
-    LCD_Write_Cmd(0xC6);  // Frame Rate Control in Normal Mode
-    LCD_Write_Data(0x0F); // 111Hz
-
-    LCD_Write_Cmd(0xD0); // Power Control 1
-    LCD_Write_Data(0xA4);
-    LCD_Write_Data(0xA1);
-
-    LCD_Write_Cmd(0xD6);
-    LCD_Write_Data(0xA1);
-
-    LCD_Write_Cmd(0xBB); // VCOM
-    LCD_Write_Data(0x3B);
-    //---------------ST7789V gamma setting-------------//
-    LCD_Write_Cmd(0xE0); // Set Gamma
-    LCD_Write_Data(0xF0);
-    LCD_Write_Data(0x0B);
-    LCD_Write_Data(0x11);
-    LCD_Write_Data(0x0E);
-    LCD_Write_Data(0x0D);
-    LCD_Write_Data(0x19);
-    LCD_Write_Data(0x36);
-    LCD_Write_Data(0x33);
-    LCD_Write_Data(0x4B);
-    LCD_Write_Data(0x07);
-    LCD_Write_Data(0x14);
-    LCD_Write_Data(0x14);
-    LCD_Write_Data(0x2C);
-    LCD_Write_Data(0x2E);
-
-    LCD_Write_Cmd(0xE1); // Set Gamma
-    LCD_Write_Data(0xF0);
-    LCD_Write_Data(0x0D);
-    LCD_Write_Data(0x12);
-    LCD_Write_Data(0x0B);
-    LCD_Write_Data(0x09);
-    LCD_Write_Data(0x03);
-    LCD_Write_Data(0x32);
-    LCD_Write_Data(0x44);
-    LCD_Write_Data(0x48);
-    LCD_Write_Data(0x39);
-    LCD_Write_Data(0x16);
-    LCD_Write_Data(0x16);
-    LCD_Write_Data(0x2d);
-    LCD_Write_Data(0x30);
-
-    LCD_Write_Cmd(0xE4);
-    LCD_Write_Data(0x25);
-    LCD_Write_Data(0x00);
-    LCD_Write_Data(0x00);
-
-    LCD_Write_Cmd(0x21); // 此命令用于从显示反转模式恢复。
-
-    LCD_Write_Cmd(0x29); // 显示打开
-
-    LCD_Write_Cmd(0x2c);
-
-#endif
-
-#if DUBEG
+    // 关闭睡眠模式
+    DrvSt7789Send(E_SEND_CMD,0x11);
+    HAL_Delay(150);
+    DrvSt7789SetDir(USE_HORIZONTAL);
+#if DEVICE_IC == 1
 
     /* 开始设置显存扫描模式，数据格式等 */
-    LCD_Write_Cmd(0x36);
-    LCD_Write_Data(0x00);
+    DrvSt7789Send(E_SEND_CMD,0x36);
+    DrvSt7789Send(E_SEND_DATA,0x00);
     /* RGB 5-6-5-bit格式  */
-    LCD_Write_Cmd(0x3A);
-    LCD_Write_Data(0x55);
+    DrvSt7789Send(E_SEND_CMD,0x3A);
+    DrvSt7789Send(E_SEND_DATA,0x05);
     /* porch 设置 */
-    LCD_Write_Cmd(0xB2);
-    LCD_Write_Data(0x0C);
-    LCD_Write_Data(0x0C);
-    LCD_Write_Data(0x00);
-    LCD_Write_Data(0x33);
-    LCD_Write_Data(0x33);
+    DrvSt7789Send(E_SEND_CMD,0xB2);
+    DrvSt7789Send(E_SEND_DATA,0x0C);
+    DrvSt7789Send(E_SEND_DATA,0x0C);
+    DrvSt7789Send(E_SEND_DATA,0x00);
+    DrvSt7789Send(E_SEND_DATA,0x33);
+    DrvSt7789Send(E_SEND_DATA,0x33);
     /* VGH设置 */
-    LCD_Write_Cmd(0xB7);
-    LCD_Write_Data(0x72);
+    DrvSt7789Send(E_SEND_CMD,0xB7);
+    DrvSt7789Send(E_SEND_DATA,0x46);
     /* VCOM 设置 */
-    LCD_Write_Cmd(0xBB);
-    LCD_Write_Data(0x3D);
+    DrvSt7789Send(E_SEND_CMD,0xBB);
+    DrvSt7789Send(E_SEND_DATA,0x1B);
     /* LCM 设置 */
-    LCD_Write_Cmd(0xC0);
-    LCD_Write_Data(0x2C);
+    DrvSt7789Send(E_SEND_CMD,0xC0);
+    DrvSt7789Send(E_SEND_DATA,0x2C);
     /* VDV and VRH 设置 */
-    LCD_Write_Cmd(0xC2);
-    LCD_Write_Data(0x01);
+    DrvSt7789Send(E_SEND_CMD,0xC2);
+    DrvSt7789Send(E_SEND_DATA,0x01);
     /* VRH 设置 */
-    LCD_Write_Cmd(0xC3);
-    LCD_Write_Data(0x19);
+    DrvSt7789Send(E_SEND_CMD,0xC3);
+    DrvSt7789Send(E_SEND_DATA,0x0F);
     /* VDV 设置 */
-    LCD_Write_Cmd(0xC4);
-    LCD_Write_Data(0x20);
+    DrvSt7789Send(E_SEND_CMD,0xC4);
+    DrvSt7789Send(E_SEND_DATA,0x20);
     /* 普通模式下显存速率设置 60Mhz */
-    LCD_Write_Cmd(0xC6);
-    LCD_Write_Data(0x0F);
+    DrvSt7789Send(E_SEND_CMD,0xC6);
+    DrvSt7789Send(E_SEND_DATA,0x0F);
     /* 电源控制 */
-    LCD_Write_Cmd(0xD0);
-    LCD_Write_Data(0xA4);
-    LCD_Write_Data(0xA1);
+    DrvSt7789Send(E_SEND_CMD,0xD0);
+    DrvSt7789Send(E_SEND_DATA,0xA4);
+    DrvSt7789Send(E_SEND_DATA,0xA1);
+
+    DrvSt7789Send(E_SEND_CMD,0xD6);
+    DrvSt7789Send(E_SEND_DATA,0xA1);
+
     /* 电压设置 */
-    LCD_Write_Cmd(0xE0);
-    LCD_Write_Data(0xD0);
-    LCD_Write_Data(0x04);
-    LCD_Write_Data(0x0D);
-    LCD_Write_Data(0x11);
-    LCD_Write_Data(0x13);
-    LCD_Write_Data(0x2B);
-    LCD_Write_Data(0x3F);
-    LCD_Write_Data(0x54);
-    LCD_Write_Data(0x4C);
-    LCD_Write_Data(0x18);
-    LCD_Write_Data(0x0D);
-    LCD_Write_Data(0x0B);
-    LCD_Write_Data(0x1F);
-    LCD_Write_Data(0x23);
-    /* 电压设置 */
-    LCD_Write_Cmd(0xE1);
-    LCD_Write_Data(0xD0);
-    LCD_Write_Data(0x04);
-    LCD_Write_Data(0x0C);
-    LCD_Write_Data(0x11);
-    LCD_Write_Data(0x13);
-    LCD_Write_Data(0x2C);
-    LCD_Write_Data(0x3F);
-    LCD_Write_Data(0x44);
-    LCD_Write_Data(0x51);
-    LCD_Write_Data(0x2F);
-    LCD_Write_Data(0x1F);
-    LCD_Write_Data(0x1F);
-    LCD_Write_Data(0x20);
-    LCD_Write_Data(0x23);
+    DrvSt7789Send(E_SEND_CMD,0xE0);
+
+
+    DrvSt7789Send(E_SEND_DATA,0xF0);
+    DrvSt7789Send(E_SEND_DATA,0x00);
+    DrvSt7789Send(E_SEND_DATA,0x06);
+    DrvSt7789Send(E_SEND_DATA,0x04);
+    DrvSt7789Send(E_SEND_DATA,0x05);
+    DrvSt7789Send(E_SEND_DATA,0x05);
+    DrvSt7789Send(E_SEND_DATA,0x31);
+    DrvSt7789Send(E_SEND_DATA,0x44);
+    DrvSt7789Send(E_SEND_DATA,0x48);
+    DrvSt7789Send(E_SEND_DATA,0x36);
+    DrvSt7789Send(E_SEND_DATA,0x12);
+    DrvSt7789Send(E_SEND_DATA,0x12);
+    DrvSt7789Send(E_SEND_DATA,0x2B);
+    DrvSt7789Send(E_SEND_DATA,0x34);
+
+        /* 电压设置 */
+    DrvSt7789Send(E_SEND_CMD,0xE1);
+    DrvSt7789Send(E_SEND_DATA,0xE1);
+    DrvSt7789Send(E_SEND_DATA, 0xF0);
+    DrvSt7789Send(E_SEND_DATA, 0x0B);
+    DrvSt7789Send(E_SEND_DATA, 0x0F);
+    DrvSt7789Send(E_SEND_DATA, 0x0F);
+    DrvSt7789Send(E_SEND_DATA, 0x0D);
+    DrvSt7789Send(E_SEND_DATA, 0x26);
+    DrvSt7789Send(E_SEND_DATA, 0x31);
+    DrvSt7789Send(E_SEND_DATA, 0x43);
+    DrvSt7789Send(E_SEND_DATA, 0x47);
+    DrvSt7789Send(E_SEND_DATA, 0x38);
+    DrvSt7789Send(E_SEND_DATA, 0x14);
+    DrvSt7789Send(E_SEND_DATA, 0x14);
+    DrvSt7789Send(E_SEND_DATA, 0x2C);
+    DrvSt7789Send(E_SEND_DATA, 0x32);
     /* 显示开 */
-    LCD_Write_Cmd(0x21);
-    LCD_Write_Cmd(0x29);
+    DrvSt7789Send(E_SEND_CMD,0x21);
+    DrvSt7789Send(E_SEND_CMD,0x29);
+    // DrvSt7789Send(E_SEND_CMD,0x2C);
+#elif DEVICE_IC == 0
 
-#endif
-
-    LCD_Write_Cmd(0x3a);
-    LCD_Write_Data(0x05); // 0x55
+    DrvSt7789Send(E_SEND_CMD,0x3a);
+    DrvSt7789Send(E_SEND_DATA,0x05); // 
     //--------------------------------ST7789V Frame rate setting-----------------
 
-    LCD_Write_Cmd(0xb2);
-    LCD_Write_Data(0x0c);
-    LCD_Write_Data(0x0c);
-    LCD_Write_Data(0x00);
-    LCD_Write_Data(0x33);
-    LCD_Write_Data(0x33);
-    LCD_Write_Cmd(0xb7);
-    LCD_Write_Data(0x35);
+    DrvSt7789Send(E_SEND_CMD,0xb2);
+    DrvSt7789Send(E_SEND_DATA,0x0c);
+    DrvSt7789Send(E_SEND_DATA,0x0c);
+    DrvSt7789Send(E_SEND_DATA,0x00);
+    DrvSt7789Send(E_SEND_DATA,0x33);
+    DrvSt7789Send(E_SEND_DATA,0x33);
+    DrvSt7789Send(E_SEND_CMD,0xb7);
+    DrvSt7789Send(E_SEND_DATA,0x35);
     //---------------------------------ST7789V Power setting---------------------
 
-    LCD_Write_Cmd(0xbb);
-    LCD_Write_Data(0x19); // 0x28
-    LCD_Write_Cmd(0xc0);
-    LCD_Write_Data(0x2c);
-    LCD_Write_Cmd(0xc2);
-    LCD_Write_Data(0x01);
-    LCD_Write_Cmd(0xc3);
-    LCD_Write_Data(0x12); // 0x10
-    LCD_Write_Cmd(0xc4);
-    LCD_Write_Data(0x20);
-    LCD_Write_Cmd(0xc6);
-    LCD_Write_Data(0x0f);
-    LCD_Write_Cmd(0xd0);
-    LCD_Write_Data(0xa4);
-    LCD_Write_Data(0xa1);
+    DrvSt7789Send(E_SEND_CMD,0xbb);
+    DrvSt7789Send(E_SEND_DATA,0x19); // 0x28
+    DrvSt7789Send(E_SEND_CMD,0xc0);
+    DrvSt7789Send(E_SEND_DATA,0x2c);
+    DrvSt7789Send(E_SEND_CMD,0xc2);
+    DrvSt7789Send(E_SEND_DATA,0x01);
+    DrvSt7789Send(E_SEND_CMD,0xc3);
+    DrvSt7789Send(E_SEND_DATA,0x12); // 0x10
+    DrvSt7789Send(E_SEND_CMD,0xc4);
+    DrvSt7789Send(E_SEND_DATA,0x20);
+    DrvSt7789Send(E_SEND_CMD,0xc6);
+    DrvSt7789Send(E_SEND_DATA,0x0f);
+    DrvSt7789Send(E_SEND_CMD,0xd0);
+    DrvSt7789Send(E_SEND_DATA,0xa4);
+    DrvSt7789Send(E_SEND_DATA,0xa1);
     //--------------------------------ST7789V gamma setting----------------------
 
-    LCD_Write_Cmd(0xe0);
-    LCD_Write_Data(0xd0);
-    LCD_Write_Data(0x04); // 0x00
-    LCD_Write_Data(0x0d); // 0x02
-    LCD_Write_Data(0x11); // 0x07
-    LCD_Write_Data(0x13); // 0x0a
-    LCD_Write_Data(0x2b); // 0x28
-    LCD_Write_Data(0x3f); // 0x32
-    LCD_Write_Data(0x54); // 0x44
-    LCD_Write_Data(0x4c); // 0x42
-    LCD_Write_Data(0x18); // 0x06
-    LCD_Write_Data(0x0d); // 0x0e
-    LCD_Write_Data(0x0b); // 0x12
-    LCD_Write_Data(0x1f); // 0x14
-    LCD_Write_Data(0x23); // 0x17
-    LCD_Write_Cmd(0xe1);
-    LCD_Write_Data(0xd0); // 0xd0
-    LCD_Write_Data(0x04); // 0x00
-    LCD_Write_Data(0x0c); // 0x02
-    LCD_Write_Data(0x11); // 0x07
-    LCD_Write_Data(0x13); // 0x0a
-    LCD_Write_Data(0x2c); // 0x28
-    LCD_Write_Data(0x3f); // 0x31
-    LCD_Write_Data(0x44); // 0x54
-    LCD_Write_Data(0x51); // 0x47
-    LCD_Write_Data(0x2f); // 0x0e
-    LCD_Write_Data(0x1f); // 0x1c
-    LCD_Write_Data(0x1f); // 0x17
-    LCD_Write_Data(0x20); // 0x1b
-    LCD_Write_Data(0x23); // 0x1e
+    DrvSt7789Send(E_SEND_CMD,0xe0);
+    DrvSt7789Send(E_SEND_DATA,0xd0);
+    DrvSt7789Send(E_SEND_DATA,0x04); // 0x00
+    DrvSt7789Send(E_SEND_DATA,0x0d); // 0x02
+    DrvSt7789Send(E_SEND_DATA,0x11); // 0x07
+    DrvSt7789Send(E_SEND_DATA,0x13); // 0x0a
+    DrvSt7789Send(E_SEND_DATA,0x2b); // 0x28
+    DrvSt7789Send(E_SEND_DATA,0x3f); // 0x32
+    DrvSt7789Send(E_SEND_DATA,0x54); // 0x44
+    DrvSt7789Send(E_SEND_DATA,0x4c); // 0x42
+    DrvSt7789Send(E_SEND_DATA,0x18); // 0x06
+    DrvSt7789Send(E_SEND_DATA,0x0d); // 0x0e
+    DrvSt7789Send(E_SEND_DATA,0x0b); // 0x12
+    DrvSt7789Send(E_SEND_DATA,0x1f); // 0x14
+    DrvSt7789Send(E_SEND_DATA,0x23); // 0x17
+    DrvSt7789Send(E_SEND_CMD,0xe1);
+    DrvSt7789Send(E_SEND_DATA,0xd0); // 0xd0
+    DrvSt7789Send(E_SEND_DATA,0x04); // 0x00
+    DrvSt7789Send(E_SEND_DATA,0x0c); // 0x02
+    DrvSt7789Send(E_SEND_DATA,0x11); // 0x07
+    DrvSt7789Send(E_SEND_DATA,0x13); // 0x0a
+    DrvSt7789Send(E_SEND_DATA,0x2c); // 0x28
+    DrvSt7789Send(E_SEND_DATA,0x3f); // 0x31
+    DrvSt7789Send(E_SEND_DATA,0x44); // 0x54
+    DrvSt7789Send(E_SEND_DATA,0x51); // 0x47
+    DrvSt7789Send(E_SEND_DATA,0x2f); // 0x0e
+    DrvSt7789Send(E_SEND_DATA,0x1f); // 0x1c
+    DrvSt7789Send(E_SEND_DATA,0x1f); // 0x17
+    DrvSt7789Send(E_SEND_DATA,0x20); // 0x1b
+    DrvSt7789Send(E_SEND_DATA,0x23); // 0x1e
 
-    LCD_Write_Cmd(0x20);
+    DrvSt7789Send(E_SEND_CMD,0x20);
 
-    LCD_Write_Cmd(0x29);
-
-    ////LCD_BLK(1);
-    /* 清屏为白色 */
-    LCD_Clear(WHITE);
-    LCD_Clear(GREEN);
-    //    LCD_color_point(40,40,RED);
-    //		HAL_Delay(1000);
-    lcd_test();
-#if DUBEG
-
-    lcd_test();
-
+    DrvSt7789Send(E_SEND_CMD,0x29);
 #endif
+    DrvSt7789Clear(WHITE);
+    DrvSt7789ShowString(0,0,"HELLO1111",E_FONT_1206,BLACK,WHITE);
+    DrvSt7789ShowString(50,50,"HELLO2222",E_FONT_2412,WHITE,BLACK);
+    // DrvSt7789Clear(WHITE);
+    // DrvSt7789Clear(LBBLUE);
+    // DrvSt7789FillRect(20, 30, 100, 50, 0xF800);
 }

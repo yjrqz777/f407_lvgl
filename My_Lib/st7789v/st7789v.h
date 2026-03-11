@@ -1,13 +1,4 @@
 
-/**************作者B站UP：Sangk-Hu****************/
-
-/*****************QQ群：690367095******************/
-
-/****关注UP后，私信或者加群获得资料或者其他资料*****/
-
-/********************************************/
-/*采用精确定时，使用SysTick_Init初始延时函数*/
-/********************************************/
 #ifndef _st7789v_H
 #define _st7789v_H
 #include "main.h"
@@ -16,30 +7,17 @@
 //#include "usart.h"
 #include "gpio.h"
 #include "lv_port_disp.h"
-//#include <stm32f40x.h>
-//#include "bit.h"     
+#include "stm32f4xx_hal.h"
 
-
-#define LCD_RST(n) (n?\
-											HAL_GPIO_WritePin(lcd_rest_GPIO_Port,lcd_rest_Pin,GPIO_PIN_SET):\
-											HAL_GPIO_WritePin(lcd_rest_GPIO_Port,lcd_rest_Pin,GPIO_PIN_RESET)\
-										)
-//#define LCD_BLK(n) (n?\
-//											HAL_GPIO_WritePin(lcd_blk_GPIO_Port,lcd_blk_Pin,GPIO_PIN_SET):\
-//											HAL_GPIO_WritePin(lcd_blk_GPIO_Port,lcd_blk_Pin,GPIO_PIN_RESET)\
-//										)
-										
-										
-#define LCD_DC(n) (n?\
-											HAL_GPIO_WritePin(lcd_dc_GPIO_Port,lcd_dc_Pin,GPIO_PIN_SET):\
-											HAL_GPIO_WritePin(lcd_dc_GPIO_Port,lcd_dc_Pin,GPIO_PIN_RESET)\
-										)
-										
-#define LCD_CS(n) (n?\
-											HAL_GPIO_WritePin(lcd_cs_GPIO_Port,lcd_cs_Pin,GPIO_PIN_SET):\
-											HAL_GPIO_WritePin(lcd_cs_GPIO_Port,lcd_cs_Pin,GPIO_PIN_RESET)\
-										)
-
+/*
+0 旧
+1 新
+*/
+#define DEVICE_IC 0
+#define LCD_BLK(n) HAL_GPIO_WritePin(GPIOE,GPIO_PIN_14,n?GPIO_PIN_SET:GPIO_PIN_RESET)
+#define LCD_CS(n) HAL_GPIO_WritePin(GPIOB,GPIO_PIN_11,n?GPIO_PIN_SET:GPIO_PIN_RESET)
+#define LCD_RST(n) HAL_GPIO_WritePin(GPIOE,GPIO_PIN_15,n?GPIO_PIN_SET:GPIO_PIN_RESET)
+#define LCD_DC(n) HAL_GPIO_WritePin(GPIOE,GPIO_PIN_12,n?GPIO_PIN_SET:GPIO_PIN_RESET)
 
 
 #define WIDTH_OFFSET 		 0
@@ -47,7 +25,7 @@
 
 #define USE_HORIZONTAL 	 2  //设置横屏或者竖屏显示 0或1为竖屏 2或3为横屏
 
-#if USE_HORIZONTAL==0||USE_HORIZONTAL==1
+#if (USE_HORIZONTAL== 0 || USE_HORIZONTAL == 1)
 #define LCD_W 					 240
 #define LCD_H 					 320
 
@@ -81,8 +59,28 @@
 
 
 
-extern void st7789v_init();
-extern void LCD_color_fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,uint16_t color);
-extern void LCD_color_point(uint16_t x1, uint16_t y1,uint16_t color);
-extern void LCD_color_fill_lvgl(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, lv_color_t * color);
+typedef enum eSendModeDef
+{
+	E_SEND_CMD,
+	E_SEND_DATA,
+	E_SEND_DATA_MAX
+}eSendModeDef;
+
+
+
+typedef enum eAsciiFontDef
+{
+    E_FONT_1206 = 0,
+    E_FONT_2412,
+	E_FONT_MAX
+}eAsciiFontDef;
+
+
+
+extern void Drvst7789Init();
+extern void DrvSt7789FillLvgl(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, lv_color_t *color);
+
+// extern void LCD_color_fill(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2,uint16_t color);
+// extern void LCD_color_point(uint16_t x1, uint16_t y1,uint16_t color);
+// extern void LCD_color_fill_lvgl(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, lv_color_t * color);
 #endif

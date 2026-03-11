@@ -230,7 +230,7 @@ void test()
     lv_img_set_angle(img, 30);   // 设置图片旋转角
     lv_img_set_zoom(img, 200);   // 设置图片缩放
 
-    lv_example_slider_1();
+    // lv_example_slider_1();
     objss = anim_show_2();
     lv_example_get_started_1();
     lv_example_colorwheel_1();

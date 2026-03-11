@@ -16,7 +16,7 @@ uint8_t do_i2cdetect_cmd()
         {
             fflush(stdout);
             address = i + j;
-            uint8_t ret = HAL_I2C_IsDeviceReady(&hi2c2, (address << 1) | 1, 2, 500);
+            uint8_t ret = HAL_I2C_IsDeviceReady(&hi2c1, (address << 1) | 1, 2, 500);
             if (ret == HAL_OK)
             {
                 printf("%02x ", address);
@@ -34,13 +34,13 @@ uint8_t do_i2cdetect_cmd()
     }
    return 0;
     // 		uint8_t data[8]={0};
-    // 		HAL_I2C_Mem_Read(&hi2c2,(0x38 << 1) | 1,0x85,1,data, 1,1000);
+    // 		HAL_I2C_Mem_Read(&hi2c1,(0x38 << 1) | 1,0x85,1,data, 1,1000);
 	// 			printf("-%02X-\r\n",data[0]);
 	// 		uint8_t data2 = 0xc8;
     // // uint8_t data23[2];
-	// 		HAL_I2C_Mem_Write(&hi2c2, (0x38 << 1) | 0, 0x85, 1, &data2, 1, 1000);
+	// 		HAL_I2C_Mem_Write(&hi2c1, (0x38 << 1) | 0, 0x85, 1, &data2, 1, 1000);
     // //		for(int i = 0;i<1;i++)
-	// 			HAL_I2C_Mem_Read(&hi2c2,(0x38 << 1) | 1,0x85,1,data, 1,1000);
+	// 			HAL_I2C_Mem_Read(&hi2c1,(0x38 << 1) | 1,0x85,1,data, 1,1000);
     // 		printf("-%02X-\r\n",data[0]);
 }
 
@@ -48,8 +48,8 @@ void ft6336_set_sleep_time(uint8_t time)
 {
     uint8_t data2 = time;
     // uint8_t data23[2];
-    HAL_I2C_Mem_Write(&hi2c2, (0x38 << 1) | 0, 0x87, 1, &data2, 1, 1000);
-    // HAL_I2C_Mem_Read(&hi2c2,(0x38 << 1) | 1,0x87,1,data23, 1,1000);
+    HAL_I2C_Mem_Write(&hi2c1, (0x38 << 1) | 0, 0x87, 1, &data2, 1, 1000);
+    // HAL_I2C_Mem_Read(&hi2c1,(0x38 << 1) | 1,0x87,1,data23, 1,1000);
     // printf("-%02X-\r\n",data23[0]);
 }
 
@@ -63,7 +63,7 @@ void ft6336_set_sleep_time(uint8_t time)
 uint8_t ft6336_enable()
 {
     uint8_t data[1] = {0};
-    HAL_I2C_Mem_Read(&hi2c2, (FT6636ADDR << 1) | 1, 0x02, 1, data, 1, 1000);
+    HAL_I2C_Mem_Read(&hi2c1, (FT6636ADDR << 1) | 1, 0x02, 1, data, 1, 1000);
     if (data[0] > 0)
         return 1;
     else
@@ -74,16 +74,16 @@ void ft6336_read_xy(uint16_t *x, uint16_t *y)
 {
     uint8_t data[4] = {0};
 
-    HAL_I2C_Mem_Read_DMA(&hi2c2, (FT6636ADDR << 1) | 1, 0x03, 1, data, 4);
+    HAL_I2C_Mem_Read_DMA(&hi2c1, (FT6636ADDR << 1) | 1, 0x03, 1, data, 4);
 
-    while (HAL_I2C_IsDeviceReady(&hi2c2, (FT6636ADDR << 1) | 1, 2, 50))
+    while (HAL_I2C_IsDeviceReady(&hi2c1, (FT6636ADDR << 1) | 1, 2, 50))
         ;
     ////		printf("-%02x-%02x-%02x-%02x", data[0], data[1],data[2],data[3]);
     //		for(int i=0;i<100;i++)
     //			for(int j=0;j<100;j++)
     //				for(int j=0;j<10;j++);
 
-    //		HAL_I2C_Mem_Read(&hi2c2, (FT6636ADDR << 1) | 1, 0x03, 1, data, 4,1000);
+    //		HAL_I2C_Mem_Read(&hi2c1, (FT6636ADDR << 1) | 1, 0x03, 1, data, 4,1000);
     *x = ((data[2] & 0x0f) << 8) + data[3];
     *y = 240 - ((data[0] & 0x0f) << 8 | data[1]);
 //		*y = (((data[0] & 0x0f) << 8) + data[1]);
@@ -97,8 +97,8 @@ uint16_t ft6336_read_x()
     uint8_t data[2] = {0};
     uint8_t data2[2] = {0};
 
-    uint8_t ret_x = HAL_I2C_Mem_Read_DMA(&hi2c2, (FT6636ADDR << 1) | 1, 0x05, 1, data, 2);
-    //    HAL_I2C_Mem_Read(&hi2c2, (FT6636ADDR << 1) | 1, 0x06, 1, data2, 1,1000);
+    uint8_t ret_x = HAL_I2C_Mem_Read_DMA(&hi2c1, (FT6636ADDR << 1) | 1, 0x05, 1, data, 2);
+    //    HAL_I2C_Mem_Read(&hi2c1, (FT6636ADDR << 1) | 1, 0x06, 1, data2, 1,1000);
     //		printf("x:-%d-\r\n",ret_x);
     //		HAL_Delay(1);
     for (int i = 0; i < 100; i++)
@@ -113,8 +113,8 @@ uint16_t ft6336_read_y()
     uint8_t data3[2] = {0};
     uint8_t data4[2] = {0};
     uint8_t ret_x, ret_y;
-    ret_x = HAL_I2C_Mem_Read_DMA(&hi2c2, (FT6636ADDR << 1) | 1, 0x03, 1, data3, 2);
-    //    ret_y = HAL_I2C_Mem_Read_DMA(&hi2c2, (FT6636ADDR << 1) | 1, 0x04, 1, data4, 1);
+    ret_x = HAL_I2C_Mem_Read_DMA(&hi2c1, (FT6636ADDR << 1) | 1, 0x03, 1, data3, 2);
+    //    ret_y = HAL_I2C_Mem_Read_DMA(&hi2c1, (FT6636ADDR << 1) | 1, 0x04, 1, data4, 1);
     printf("-%d-%d-\r\n", ret_x, ret_y);
     uint16_t y = (data3[0] & 0x0f) << 8 | data3[1];
     printf("\r\n");

@@ -62,16 +62,16 @@ osThreadId lvgl_taskHandle;
 
 /* USER CODE END FunctionPrototypes */
 
-void StartDefaultTask(void const *argument);
-void lvgl_task_func(void const *argument);
+void StartDefaultTask(void const * argument);
+void lvgl_task_func(void const * argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /* GetIdleTaskMemory prototype (linked to static allocation support) */
-void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize);
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize );
 
 /* GetTimerTaskMemory prototype (linked to static allocation support) */
-void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize);
+void vApplicationGetTimerTaskMemory( StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize );
 
 /* USER CODE BEGIN GET_IDLE_TASK_MEMORY */
 static StaticTask_t xIdleTaskTCBBuffer;
@@ -100,12 +100,11 @@ void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer, StackT
 /* USER CODE END GET_TIMER_TASK_MEMORY */
 
 /**
- * @brief  FreeRTOS initialization
- * @param  None
- * @retval None
- */
-void MX_FREERTOS_Init(void)
-{
+  * @brief  FreeRTOS initialization
+  * @param  None
+  * @retval None
+  */
+void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -128,7 +127,7 @@ void MX_FREERTOS_Init(void)
 
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
-  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 1024);
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* definition and creation of lvgl_task */
@@ -138,6 +137,7 @@ void MX_FREERTOS_Init(void)
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
+
 }
 
 /* USER CODE BEGIN Header_StartDefaultTask */
@@ -147,7 +147,7 @@ void MX_FREERTOS_Init(void)
  * @retval None
  */
 /* USER CODE END Header_StartDefaultTask */
-void StartDefaultTask(void const *argument)
+void StartDefaultTask(void const * argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
 
@@ -157,7 +157,7 @@ void StartDefaultTask(void const *argument)
     //		printf("111\r\n");
 
     // HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_2);
-    osDelay(200);
+    osDelay(2000);
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -169,7 +169,7 @@ void StartDefaultTask(void const *argument)
  * @retval None
  */
 /* USER CODE END Header_lvgl_task_func */
-void lvgl_task_func(void const *argument)
+void lvgl_task_func(void const * argument)
 {
   /* USER CODE BEGIN lvgl_task_func */
 
@@ -179,18 +179,18 @@ void lvgl_task_func(void const *argument)
                                             (void *) 0,
                                             (TimerCallbackFunction_t)lvgl_tick);
   xTimerStart(xTimerHandle, 0);
-	do_i2cdetect_cmd();
+	// do_i2cdetect_cmd();
   lv_init();
 
   lv_port_disp_init();
 
-  lv_port_indev_init();
+  // lv_port_indev_init();
   test();
   /* Infinite loop */
   for (;;)
   {
     lv_timer_handler();
-    osDelay(10);
+    osDelay(5);
   }
   /* USER CODE END lvgl_task_func */
 }
